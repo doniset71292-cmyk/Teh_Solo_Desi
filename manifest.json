@@ -1,0 +1,24 @@
+{
+  "name": "Teh Solo Desi",
+  "short_name": "Teh Solo Desi",
+  "description": "Kasir Teh Solo Desi - RuangMinuman",
+  "display": "standalone",
+  "background_color": "#FFF7ED",
+  "theme_color": "#7C4A21",
+  "start_url": "./index.html",
+  "scope": "./",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3081/3081986.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3081/3081986.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
