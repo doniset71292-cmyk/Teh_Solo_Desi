@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Teh Solo Desi</title>
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+<!-- PWA BENERAN - BUKAN TEMPELAN LAGI -->
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#7C4A21">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Teh Solo Desi">
+<link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3081/3081986.png">
+<link rel="icon" href="https://cdn-icons-png.flaticon.com/512/3081/3081986.png">
+
+<style>
+  *{box-sizing:border-box;font-family:system-ui,sans-serif}
+  body{margin:0;background:#FFF7ED;padding:12px;padding-bottom:90px;color:#3B2A1A}
+  h1{font-size:20px;margin:4px 0 0} h1 span{font-size:11px;background:#7C4A21;color:#fff;padding:3px 8px;border-radius:20px}
+  p{margin:4px 0;color:#8a6a4d;font-size:13px}
+  .card{background:#fff;border-radius:16px;padding:14px;margin-top:12px;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+  .menu{border:2px solid #F5E6D3;border-radius:14px;padding:12px;text-align:left;background:#FFFBF5;cursor:pointer}
+  .menu b{font-size:15px} .menu small{display:block;color:#8a6a4d;margin:2px 0 8px} .menu span{font-weight:800;color:#7C4A21}
+  .menu:active{transform:scale(.97);background:#FFF0D6}
+  .row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px dashed #eee;font-size:14px;gap:8px}
+  .row button{width:auto;padding:4px 10px;font-size:16px}
+  .total{display:flex;justify-content:space-between;font-size:18px;font-weight:800;margin-top:10px}
+  button{border:0;border-radius:12px;padding:12px;font-weight:700;cursor:pointer;width:100%}
+  .btn-tunai{background:#7C4A21;color:#fff} .btn-qris{background:#111;color:#fff}
+  .btn-kecil{background:#FFF0D6;color:#7C4A21;padding:8px;font-size:13px}
+  .btn-bahaya{background:#FEE2E2;color:#B91C1C;padding:8px;font-size:13px}
+  .btn-install{background:#15803D;color:#fff;padding:14px;font-size:15px;box-shadow:0 4px 14px rgba(21,128,61,.35)}
+  input,select{width:100%;padding:11px;border:1.5px solid #EADBC8;border-radius:10px;margin:6px 0;font-size:14px}
+  .tabs{position:fixed;bottom:0;left:0;right:0;background:#fff;display:flex;border-top:1px solid #eee;padding:8px;gap:6px}
+  .tabs button{background:transparent;color:#8a6a4d;font-size:12px;padding:8px 4px}
+  .tabs button.aktif{background:#7C4A21;color:#fff}
+  .low{color:#DC2626;font-weight:700;font-size:12px}
+  .badge{background:#DCFCE7;color:#166534;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700}
+  .banner-install{background:#DCFCE7;border:2px solid #15803D;border-radius:16px;padding:14px;margin-top:12px}
+  .banner-manual{background:#FEF3C7;border:2px solid #F59E0B;border-radius:16px;padding:14px;margin-top:12px}
+</style>
+</head>
+<body>
+<div id="app">
+  <h1>Teh Solo Desi <span>RuangMinuman v2 - PWA</span></h1>
+  <p>Halo Desi! Jualan hari ini semangat ya ✨ - {{ totalCupTerjual }} cup terjual</p>
+
+  <!-- BANNER INSTALL OTOMATIS - MUNCUL KALAU CHROME NGASIH IZIN -->
+  <div v-if="bisaInstall && !sudahInstall" class="banner-install">
+    <b>📲 Install Aplikasi Teh Solo Desi?</b>
+    <p style="color:#166534">Biar gak perlu buka Chrome lagi, langsung pencet ikon di HP kayak aplikasi beneran.</p>
+    <button class="btn-install" @click="installApp">⬇️ Install Sekarang - Gratis</button>
+    <button class="btn-kecil" @click="bisaInstall=false">Nanti aja</button>
+  </div>
+
+  <!-- BANNER MANUAL - SELALU MUNCUL KALAU BELUM INSTALL, BIAR DESI GAK BINGUNG -->
+  <div v-if="!sudahInstall && !bisaInstall" class="banner-manual">
+    <b>📲 Cara Install di HP Kamu:</b>
+    <p style="color:#92400E"><b>Android:</b> Pencet titik 3 di pojok kanan atas Chrome → Tambahkan ke Layar Utama → Tambah<br><b>iPhone:</b> Pencet tombol Share di bawah → Tambahkan ke Layar Utama → Tambah</p>
+    <button class="btn-kecil" @click="cekInstall">Cek Lagi, Udah Bisa Install Belum?</button>
+  </div>
+
+  <div v-if="sudahInstall" class="card" style="background:#DCFCE7;border:1px solid #86EFAC">
+    <b>✅ Aplikasi Udah Ter-install! Mantap Desi 🎉</b>
+  </div>
+
+  <!-- KASIR -->
+  <div v-if="tab==='kasir'">
+    <div class="card">
+      <b>🧋 Kasir - Pilih Menu</b>
+      <div class="grid">
+        <div class="menu" v-for="m in menuJualan" :key="m.id" @click="tambah(m)">
+          <b>{{ m.nama }}</b>
+          <small>Stok: {{ m.stok }} <span v-if="m.stok<=5" class="low">• Mau Habis!</span></small>
+          <span>{{ rp(m.harga) }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <b>🧾 Keranjang</b>
+      <div v-if="cartList.length===0">Belum ada pesanan</div>
+      <div v-for="item in cartList" :key="item.id" class="row">
+        <span>{{ item.nama }} x {{ item.qty }}</span>
+        <span style="display:flex;gap:4px;align-items:center">
+          <button class="btn-kecil" @click="kurang(item)">-</button>
+          <b>{{ rp(item.harga*item.qty) }}</b>
+          <button class="btn-kecil" @click="tambah(item)">+</button>
+        </span>
+      </div>
+      <div class="total"><span>Total</span><span>{{ rp(totalCart) }}</span></div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn-tunai" @click="bayar('Tunai')">Bayar Tunai</button>
+        <button class="btn-qris" @click="bayar('QRIS')">Bayar QRIS</button>
+      </div>
+      <button class="btn-kecil" style="margin-top:8px" @click="cart={}">Batalkan Pesanan</button>
+    </div>
+  </div>
+
+  <!-- STOK -->
+  <div v-if="tab==='stok'">
+    <div class="card">
+      <b>📦 Stok Barang</b>
+      <div v-for="m in menu" :key="m.id" class="row">
+        <span>{{ m.nama }} <span v-if="m.stok<=5" class="low">STOK RENDAH!</span><span v-else class="badge">Aman</span></span>
+        <b>{{ m.stok }}</b>
+      </div>
+    </div>
+    <div class="card">
+      <b>➕ Barang Masuk</b>
+      <select v-model="inId"><option v-for="m in menu" :value="m.id">{{ m.nama }}</option></select>
+      <input v-model.number="inQty" type="number" placeholder="Jumlah masuk, misal 20">
+      <input v-model.number="inHarga" type="number" placeholder="Total harga beli, misal 120000">
+      <button class="btn-tunai" @click="barangMasuk">Simpan Barang Masuk</button>
+    </div>
+  </div>
+
+  <!-- LAPORAN -->
+  <div v-if="tab==='laporan'">
+    <div class="card">
+      <b>📊 Laporan Hari Ini</b>
+      <div class="row"><span>Omset</span><b>{{ rp(omset) }}</b></div>
+      <div class="row"><span>Pengeluaran</span><b>{{ rp(keluar) }}</b></div>
+      <div class="row"><span>Untung Bersih</span><b :style="{color: untung>=0 ? '#15803D' : '#DC2626'}">{{ rp(untung) }}</b></div>
+      <div class="row"><span>Total Cup Terjual</span><b>{{ totalCupTerjual }} cup</b></div>
+      <p>{{ pesanLaporan }}</p>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn-tunai" @click="downloadCSV">⬇️ Download Excel</button>
+        <button class="btn-qris" @click="downloadPDF">⬇️ PDF / Print</button>
+      </div>
+    </div>
+    <div class="card">
+      <b>💸 Tambah Pengeluaran Lain</b>
+      <input v-model="outNama" placeholder="Misal: Listrik, Sewa, Bensin">
+      <input v-model.number="outNominal" type="number" placeholder="Nominal, misal 50000">
+      <button class="btn-tunai" @click="tambahPengeluaran">Simpan Pengeluaran</button>
+    </div>
+    <div class="card">
+      <b>🧾 Riwayat Hari Ini</b>
+      <div v-if="riwayat.length===0">Belum ada riwayat</div>
+      <div v-for="(r,i) in riwayat" :key="i" class="row"><span>{{ r }}</span></div>
+      <button class="btn-bahaya" style="margin-top:10px" @click="resetHari">Reset Data Hari Ini (Buat Besok)</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button :class="{aktif: tab==='kasir'}" @click="tab='kasir'">🧋 Kasir</button>
+    <button :class="{aktif: tab==='stok'}" @click="tab='stok'">📦 Stok</button>
+    <button :class="{aktif: tab==='laporan'}" @click="tab='laporan'">📊 Laporan</button>
+  </div>
+</div>
+
+<script>
+// DAFTARIN SERVICE WORKER - INI KUNCI BIAR BISA DI-INSTALL
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').then(()=>{ console.log('SW jalan'); }).catch(()=>{});
+  });
+}
+
+const { createApp, ref, computed, watch, onMounted } = Vue;
+createApp({
+  setup(){
+    const tab = ref('kasir');
+    const bisaInstall = ref(false);
+    const sudahInstall = ref(false);
+    let deferredPrompt = null;
+
+    const defaultMenu = [
+      {id:'teh', nama:'Teh Solo Jumbo', harga:4000, stok:12},
+      {id:'freeze', nama:'Goodday Freeze', harga:7000, stok:8},
+      {id:'merah', nama:'Goodday Merah', harga:6000, stok:5},
+      {id:'kopi', nama:'Kopi Lainnya', harga:5000, stok:20},
+      {id:'cup', nama:'Cup + Sedotan', harga:0, stok:45},
+    ];
+    const menu = ref(JSON.parse(localStorage.getItem('tsd_vue_stok') || JSON.stringify(defaultMenu)));
+    const cart = ref({});
+    const omset = ref(Number(localStorage.getItem('tsd_vue_omset')||0));
+    const keluar = ref(Number(localStorage.getItem('tsd_vue_keluar')||0));
+    const totalCupTerjual = ref(Number(localStorage.getItem('tsd_vue_cup')||0));
+    const riwayat = ref(JSON.parse(localStorage.getItem('tsd_vue_riwayat')||'[]'));
+    const inId = ref('teh'); const inQty = ref(''); const inHarga = ref('');
+    const outNama = ref(''); const outNominal = ref('');
+
+    onMounted(()=>{
+      window.addEventListener('beforeinstallprompt', (e)=>{
+        e.preventDefault();
+        deferredPrompt = e;
+        bisaInstall.value = true;
+      });
+      window.addEventListener('appinstalled', ()=>{
+        sudahInstall.value = true;
+        bisaInstall.value = false;
+        localStorage.setItem('tsd_installed','1');
+      });
+      if(localStorage.getItem('tsd_installed')==='1') sudahInstall.value = true;
+      if(window.matchMedia('(display-mode: standalone)').matches) sudahInstall.value = true;
+    });
+
+    async function installApp(){
+      const isIphone = /iPhone|iPad|iPod/.test(navigator.userAgent);
+      if(isIphone){
+        alert('Cara install di iPhone:\n1. Pencet tombol Share (kotak + panah ke atas) di bawah\n2. Pilih "Tambahkan ke Layar Utama"\n3. Pencet "Tambah"');
+        return;
+      }
+      if(deferredPrompt){
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if(outcome==='accepted'){ sudahInstall.value = true; }
+        deferredPrompt = null;
+        bisaInstall.value = false;
+      } else {
+        alert('Cara install di Android:\n1. Pencet titik 3 di pojok kanan atas Chrome\n2. Pilih "Tambahkan ke Layar Utama" / "Install Aplikasi"\n3. Pencet "Install"');
+      }
+    }
+    function cekInstall(){
+      if(deferredPrompt){ bisaInstall.value = true; }
+      else { alert('Belum bisa install otomatis, pake cara manual aja ya:\nTitik 3 di Chrome → Tambahkan ke Layar Utama'); }
+    }
+
+    watch([menu, omset, keluar, totalCupTerjual, riwayat], ()=>{
+      localStorage.setItem('tsd_vue_stok', JSON.stringify(menu.value));
+      localStorage.setItem('tsd_vue_omset', omset.value);
+      localStorage.setItem('tsd_vue_keluar', keluar.value);
+      localStorage.setItem('tsd_vue_cup', totalCupTerjual.value);
+      localStorage.setItem('tsd_vue_riwayat', JSON.stringify(riwayat.value));
+    }, {deep:true});
+
+    const menuJualan = computed(()=> menu.value.filter(m=>m.harga>0));
+    const cartList = computed(()=> Object.keys(cart.value).map(id=>{
+      const m = menu.value.find(x=>x.id===id);
+      return {...m, qty: cart.value[id]};
+    }));
+    const totalCart = computed(()=> cartList.value.reduce((s,i)=> s + i.harga*i.qty, 0));
+    const untung = computed(()=> omset.value - keluar.value);
+    const pesanLaporan = computed(()=>{
+      if(omset.value===0) return 'Belum ada penjualan hari ini, semangat buka lapak!';
+      return untung.value>=0 ? 'Alhamdulillah untung hari ini! Terus semangat Desi 💪' : 'Hari ini belanja banyak ya, besok pasti untung lebih gede.';
+    });
+    function rp(n){ return 'Rp ' + Number(n).toLocaleString('id-ID'); }
+    function tambah(m){
+      const item = menu.value.find(x=>x.id===m.id);
+      if(item.stok <= (cart.value[m.id]||0)){ alert(m.nama + ' stoknya tinggal ' + item.stok + '! Restok dulu di menu Stok.'); return; }
+      cart.value[m.id] = (cart.value[m.id]||0) + 1;
+    }
+    function kurang(item){ cart.value[item.id]--; if(cart.value[item.id]<=0) delete cart.value[item.id]; }
+    function bayar(metode){
+      if(totalCart.value===0){ alert('Keranjang masih kosong'); return; }
+      const jumlahCup = cartList.value.reduce((s,i)=> s + i.qty, 0);
+      cartList.value.forEach(item=>{ const m = menu.value.find(x=>x.id===item.id); m.stok -= item.qty; });
+      const cupItem = menu.value.find(x=>x.id==='cup'); cupItem.stok -= jumlahCup;
+      omset.value += totalCart.value; totalCupTerjual.value += jumlahCup;
+      const jam = new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+      riwayat.value.unshift(`Jual ${jumlahCup} cup - ${rp(totalCart.value)} (${metode}) - ${jam}`);
+      const totalBayar = totalCart.value; cart.value = {};
+      alert(`Berhasil! Total ${rp(totalBayar)} dibayar ${metode}. Terima kasih!`);
+    }
+    function barangMasuk(){
+      if(!inQty.value || !inHarga.value){ alert('Isi jumlah & harga dulu ya'); return; }
+      const m = menu.value.find(x=>x.id===inId.value);
+      m.stok += inQty.value; keluar.value += inHarga.value;
+      riwayat.value.unshift(`Barang Masuk: ${m.nama} +${inQty.value} - ${rp(inHarga.value)}`);
+      inQty.value=''; inHarga.value=''; alert('Stok udah nambah!');
+    }
+    function tambahPengeluaran(){
+      if(!outNama.value || !outNominal.value){ alert('Isi nama & nominal dulu'); return; }
+      keluar.value += outNominal.value;
+      riwayat.value.unshift(`Pengeluaran: ${outNama.value} - ${rp(outNominal.value)}`);
+      outNama.value=''; outNominal.value='';
+    }
+    function resetHari(){
+      if(!confirm('Reset data hari ini buat besok? Stok tetap kesimpen, omset & pengeluaran jadi 0.')) return;
+      omset.value=0; keluar.value=0; totalCupTerjual.value=0; riwayat.value=[];
+    }
+    function downloadCSV(){
+      let isi = "Laporan Teh Solo Desi\n";
+      isi += `Tanggal,${new Date().toLocaleDateString('id-ID')}\n`;
+      isi += `Omset,${omset.value}\nPengeluaran,${keluar.value}\nUntung,${untung.value}\nTotal Cup,${totalCupTerjual.value}\n\nRiwayat\n`;
+      riwayat.value.forEach(r => { isi += `"${r}"\n`; });
+      const blob = new Blob([isi], {type: 'text/csv'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url;
+      a.download = `laporan-teh-solo-desi-${new Date().toISOString().slice(0,10)}.csv`;
+      a.click(); URL.revokeObjectURL(url);
+    }
+    function downloadPDF(){ window.print(); }
+
+    return { tab, menu, menuJualan, cart, cartList, totalCart, omset, keluar, untung, totalCupTerjual, riwayat, inId, inQty, inHarga, outNama, outNominal, pesanLaporan, bisaInstall, sudahInstall, installApp, cekInstall, rp, tambah, kurang, bayar, barangMasuk, tambahPengeluaran, resetHari, downloadCSV, downloadPDF };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>
